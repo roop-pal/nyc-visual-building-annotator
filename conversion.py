@@ -1,6 +1,5 @@
 import numpy as np 
 from gml_parser import *
-from sklearn.linear_model import LinearRegression
 
 # Input: Latitude and Longitude coordinates (In Degrees, Minutes, Seconds)
 #        lattitude: String, Longitude: String
