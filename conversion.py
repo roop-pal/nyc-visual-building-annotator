@@ -74,9 +74,38 @@ def train_homography(dictionary):
 	H = compute_homography(np.matrix(src_data),new_lat_long)
 	return H 
 
+# Input: Lat/Long string in format '40 42 46.8', '74 0 48.6'
+# Output: np.matrix of position in the coordinate system
+def GPS_to_coordinate(Lat, Long):
+    dictionary = parse('DA_WISE_GMLs/DA12_3D_Buildings_Merged.gml')
+    H = train_homography(dictionary)
+    inv_H = np.linalg.inv(H)
+
+    new_degrees = convert_degrees(Lat,Long)
+    dest = apply_homography(np.matrix(new_degrees),inv_H)
+
+    return dest
+
+# Input: x,y position in the model coordinate system
+# Output: Lat/Long in degrees format 
+def coordinate_to_GPS(x, y):
+    dictionary = parse('DA_WISE_GMLs/DA12_3D_Buildings_Merged.gml')
+    H = train_homography(dictionary)
+
+    dest = apply_homography(np.matrix([x,y]),H)
+
+    return dest
+
+
 if __name__ == '__main__':
-	dictionary = parse('DA_WISE_GMLs/DA12_3D_Buildings_Merged.gml')
-	H = train_homography(dictionary)
-	# Test Case: This is the Castle Clinton National Monument
-	test = dictionary['Bldg_12210022273']
-	print(apply_homography(np.matrix([(test['X'][0]+test['X'][1])/2,(test['Y'][0]+test['Y'][1])/2]),H))
+    # For testing purposes
+    dictionary = parse('DA_WISE_GMLs/DA12_3D_Buildings_Merged.gml') 
+    test = dictionary['Bldg_12210022273']
+
+	#Test Case: This is the Castle Clinton National Monument
+    print("The Lat/Long Coordinates of the Castle Clinton National Monument are: ")
+    print(coordinate_to_GPS((test['X'][0]+test['X'][1])/2,(test['Y'][0]+test['Y'][1])/2))
+
+    # Test Case: One World Trade Center
+    print("The GPS coordinates of One World Trade is",'40 42 46.8,','74 0 48.6',"which is:")
+    print(GPS_to_coordinate('40 42 46.8','74 0 48.6'))
