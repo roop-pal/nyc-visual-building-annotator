@@ -90,7 +90,8 @@ def GPS_to_coordinate(Lat, Long):
 
     dest = apply_homography(np.matrix(new_degrees),inv_H)
 
-    return dest
+    dest.tolist()
+    return dest[0]
 
 # Input: x,y position in the model coordinate system
 # Output: Lat/Long in degrees format 
@@ -99,8 +100,8 @@ def coordinate_to_GPS(x, y):
     H = train_homography(dictionary)
 
     dest = apply_homography(np.matrix([x,y]),H)
-
-    return dest
+    dest.tolist()
+    return dest[0]
 
 
 if __name__ == '__main__':
