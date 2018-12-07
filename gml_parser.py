@@ -13,24 +13,14 @@ def parse(GML_file):
 			buildings[bldg_id]["X"] = [float("inf"),-float("inf")]
 			buildings[bldg_id]["Y"] = [float("inf"),-float("inf")]
 			buildings[bldg_id]["Z"] = [float("inf"),-float("inf")]
+			buildings[current]['polygons'] = []
 			current = bldg_id
 		if "/bldg:Building" in line:
 			current = None
-		if "BIN" in line:
-			raw_value = fp.readline()
-			bld_id = raw_value.split('>')[1].split('<')[0]
-			buildings[current]['BIN'] = bld_id
-		if "DOITT_ID" in line:
-			raw_value = fp.readline()
-			bld_id = raw_value.split('>')[1].split('<')[0]
-			buildings[current]['DOITT_ID'] = bld_id
-		if "SOURCE_ID" in line:
-			raw_value = fp.readline()
-			bld_id = raw_value.split('>')[1].split('<')[0]
-			buildings[current]['SOURCE_ID'] = bld_id
 		if "<gml:posList>" in line and "</gml:posList>" in line:
 			points = line.split('>')[1].split('<')[0]
 			points = points.split(' ')
+			polygon = []
 			for p in range(len(points)//3):
 				x = float(points[3*p])
 				y = float(points[3*p+1])
@@ -47,7 +37,10 @@ def parse(GML_file):
 					buildings[bldg_id]["Z"][1] = z
 				if z < buildings[bldg_id]["Z"][0]:
 					buildings[bldg_id]["Z"][0] = z
+				polygon.append((x,y,z))
+			buildings[current]['polygons'].append(polygon)
 	return buildings
+
 
 if __name__ == '__main__':
 	dictionary = parse('DA_WISE_GMLs/DA12_3D_Buildings_Merged.gml')

@@ -12,7 +12,7 @@ def convert_degrees(latitude,longitude):
 	decimal_lat = float(lat_split[0]) + float(lat_split[1])/60 + float(lat_split[2])/3600
 	decimal_lon = float(lon_split[0]) + float(lon_split[1])/60 + float(lon_split[2])/3600
 
-	return [decimal_lat, decimal_lon]
+	return [decimal_lat, -decimal_lon]
 
 # From Homework 4
 def compute_homography(src, dst):
@@ -57,7 +57,7 @@ def apply_homography(src, H):
 # Just for the 12th GML File 
 def train_homography(dictionary):
 	# Manually measured latitude and longitude for 5 buildings
-	new_lat_long = np.array([[40.712994,74.013227], [40.748629,73.985807],[40.751655,73.975488],[40.702138,74.012065],[40.769110,73.981620]])
+	new_lat_long = np.array([[40.712994,-74.013227], [40.748629,-73.985807],[40.751655,-73.975488],[40.702138,-74.012065],[40.769110,-73.981620]])
 
 	# Test Buildings in Coordinate System
 	One_World_Trade = dictionary['Bldg_21510003972']
@@ -76,11 +76,7 @@ def train_homography(dictionary):
 
 # Input: Lat/Long string or float
 # Output: np.matrix of position in the coordinate system
-def GPS_to_coordinate(Lat, Long):
-    dictionary = parse('DA_WISE_GMLs/DA12_3D_Buildings_Merged.gml')
-    H = train_homography(dictionary)
-    inv_H = np.linalg.inv(H)
-
+def GPS_to_coordinate(Lat, Long, inv_H):
     if type(Lat) is str and type(Long) is str:
         new_degrees = convert_degrees(Lat,Long)
     elif type(Lat) is float and type(Long) is float:
@@ -89,14 +85,19 @@ def GPS_to_coordinate(Lat, Long):
         raise TypeError 
 
     dest = apply_homography(np.matrix(new_degrees),inv_H)
-
     
     return dest.tolist()[0]
+
+def translation_vector(lat,long,pressure,inv_H):
+    x,y = GPS_to_coordinate(lat,long,inv_H)
+    z = barometer_to_z(pressure)
+    T = np.array([[x],[y],[z]])
+    return T
 
 # Input: x,y position in the model coordinate system
 # Output: Lat/Long in degrees format 
 def coordinate_to_GPS(x, y):
-    dictionary = parse('DA_WISE_GMLs/DA12_3D_Buildings_Merged.gml')
+    dictionary = parse('DA12_3D_Buildings_Merged.gml')
     H = train_homography(dictionary)
 
     dest = apply_homography(np.matrix([x,y]),H)
@@ -104,20 +105,75 @@ def coordinate_to_GPS(x, y):
     return dest.tolist()[0]
 
 
+# TODO: Implement using hardcoded sea level pressure
+def barometer_to_z(pressure):
+    pass
+
+
+def rotation_matrix(x, y, z):
+    # x,y,z = 0 when phone is flat on table with top facing east
+    # normalize from -1 to 1 to 0 to 2pi
+
+    theta = y, x, z
+
+    theta = [axis % 2 * np.pi for axis in theta]
+
+    R_x = np.array([[1, 0, 0],
+                    [0, np.cos(theta[0]), -np.sin(theta[0])],
+                    [0, np.sin(theta[0]), np.cos(theta[0])]
+                    ])
+
+    R_y = np.array([[np.cos(theta[1]), 0, np.sin(theta[1])],
+                    [0, 1, 0],
+                    [-np.sin(theta[1]), 0, np.cos(theta[1])]
+                    ])
+
+    R_z = np.array([[np.cos(theta[2]), -np.sin(theta[2]), 0],
+                    [np.sin(theta[2]), np.cos(theta[2]), 0],
+                    [0, 0, 1]
+                    ])
+
+    R = np.dot(R_z, np.dot(R_y, R_x))
+
+    return R
+
+def camera_matrix(R,T, focal_len=29, pixel_size=0.00122):
+    fx = focal_len/pixel_size
+    fy = focal_len/pixel_size
+    intrinsic_matrix = np.array([[fx,0,0],
+                            [0,fy,0],
+                            [0,0,1]])
+    extrinsic_matrix = np.append(R,T,axis=1)
+    camera_matrix = np.matmul(intrinsic_matrix, extrinsic_matrix)
+    return camera_matrix
+
 if __name__ == '__main__':
     # For testing purposes
-    dictionary = parse('DA_WISE_GMLs/DA12_3D_Buildings_Merged.gml') 
+    dictionary = parse('DA12_3D_Buildings_Merged.gml') 
     test = dictionary['Bldg_12210022273']
+    H = train_homography(dictionary)
+    H_inv = np.linalg.inv(H)
 
 	# Test Case: This is the Castle Clinton National Monument
-    print("The Lat/Long Coordinates of the Castle Clinton National Monument are: ")
-    print(coordinate_to_GPS((test['X'][0]+test['X'][1])/2,(test['Y'][0]+test['Y'][1])/2))
+    # print("The Lat/Long Coordinates of the Castle Clinton National Monument are: ")
+    # print(coordinate_to_GPS((test['X'][0]+test['X'][1])/2,(test['Y'][0]+test['Y'][1])/2))
+    #
+    # # Test Case: One World Trade Center
+    # print("The GPS coordinates of One World Trade is",'40 42 46.8,','-74 0 48.6',"which is:")
+    # print(GPS_to_coordinate('40 42 46.8','74 0 48.6'))
+    #
+    # # Test Case: One World Trade in degrees
+    # print("Same Test except in Degrees:")
+    # print(GPS_to_coordinate(40.713009, -74.013678))
+    # s=translation_vector(40.713009, -74.013678,0,np.linalg.inv(H))
+    # print(s)
 
-    # Test Case: One World Trade Center
-    print("The GPS coordinates of One World Trade is",'40 42 46.8,','74 0 48.6',"which is:")
-    print(GPS_to_coordinate('40 42 46.8','74 0 48.6'))
+    [[-9.87285e+05]
+     [-2.09991e+05]
+     [-6.14687e+02]]
 
-    # Test Case: One World Trade in degrees
-    print("Same Test except in Degrees:")
-    print(GPS_to_coordinate(40.713009, 74.013678))
 
+    R = rotation_matrix(x, y, z) # DOUBLE CHECK CUZ PROBABLY WRONG
+    # T = translation_vector(lat,long,pressure,H_inv)
+    T = np.array([[9.87285e+05],[2.09991e+05],[6.14687e+02]])
+    C = camera_matrix(R, T) # if time DOUBLE CHECK
