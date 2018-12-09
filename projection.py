@@ -1,63 +1,46 @@
 import numpy as np
+import cv2
 import matplotlib.pyplot as plt
+from conversion import *
 
-def project(C,bldg_id, building_polys):
-    total_num_pts = 0
-    for polygon in building_polys:
-        total_num_pts += len(polygon)
 
-    all_2D_pts = np.zeros((total_num_pts, 2))  # for np.max and np.min
+#################
+# Assumes translation vector comes in with x and y as positive numbers (maybe z too, not sure if that matters)
+# To update just change lines 27-29
+#################
+def project(H, building_polys, bldg_id, x, y, z, lat, long, alt=77.6, focal_length=29, pixel_size=0.00122, view_x=3024, view_y=4032):
+    center_x, center_y = view_x // 2, view_y // 2
+
+    R = rotation_matrix(x, y, z)
+
+    T = translation_vector(lat, long, alt, H)
+    x_offset, y_offset, z_offset = T[0], T[1], T[2]
+    T = np.array([[0], [0], [0]])
+
+    C = camera_matrix(R, T, center_x, center_y, focal_length, pixel_size)
 
     twoD_pts = []
-    all_idx = 0
-    for polygon in building_polys:
+    for polygon in building_polys[bldg_id]:
         poly_pts = np.zeros((len(polygon), 2))
         for idx, pt in enumerate(polygon):
-            new_pt = np.append(np.array(pt), np.array([1]), axis=0)
+            pt = np.array(pt)
+            pt[0] -= x_offset
+            pt[1] -= y_offset
+            pt[2] -= z_offset
+            new_pt = np.append(pt, np.array([1]), axis=0)
             new_pt = np.matmul(C, new_pt)
             new_pt = new_pt[:2] / new_pt[2]
             poly_pts[idx] = new_pt
-            all_2D_pts[all_idx] = new_pt  # for np.max and np.min
-            all_idx += 1
         twoD_pts.append(poly_pts)
 
-    max_x = np.max(all_2D_pts[:, 0])
-    min_x = np.min(all_2D_pts[:, 0])
-    max_y = np.max(all_2D_pts[:, 1])
-    min_y = np.min(all_2D_pts[:, 1])
-
-    # adjust pts to fit within window
-    if min_x < 0:
-        for poly in twoD_pts:
-            poly[:, 0] -= min_x
-        all_2D_pts[:, 0] -= min_x
-    if min_y < 0:
-        for poly in twoD_pts:
-            poly[:, 1] -= min_y
-        all_2D_pts[:, 1] -= min_y
-
-    max_x = np.max(all_2D_pts[:, 0])
-    min_x = np.min(all_2D_pts[:, 0])
-    max_y = np.max(all_2D_pts[:, 1])
-    min_y = np.min(all_2D_pts[:, 1])
-
-    scale = (max_y - min_y) / 1000
-
-    new_img = np.zeros((1001, int((max_x - min_x) / scale) + 1))
-
-    for idx, poly in enumerate(twoD_pts):
-        poly[:, 0] -= min_x
-        poly[:, 0] /= scale
-        poly[:, 1] -= min_y
-        poly[:, 1] /= scale
-        twoD_pts[idx] = poly.astype(int)
-
+    new_img = np.zeros((view_y, view_x))
     for poly in twoD_pts:
-        # cv2.polylines(new_img,[poly],False,(255,255,255))
+        poly = poly.astype(int)
+        for pt in poly:
+            if not (0 < pt[0] < view_x) and not (0 < pt[1] < view_y): continue
         cv2.fillPoly(new_img, pts=[poly], color=(255, 255, 255))
-        cv2.polylines(new_img, [poly], 1, (0, 255, 255))
-
-    plt.figure(figsize=(20, 10))
-
-    plt.imshow(new_img, cmap='gray')
-    plt.show()
+    flipped_new = np.fliplr(new_img)
+    nonzero = cv2.findNonZero(flipped_new.astype('uint8'))
+    nonzero = nonzero.reshape((nonzero.shape[0], nonzero.shape[2]))
+    final = flipped_new[np.min(nonzero[:, 1]):np.max(nonzero[:, 1]), np.min(nonzero[:, 0]):np.max(nonzero[:, 0])]
+    return final

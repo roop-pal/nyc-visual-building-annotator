@@ -138,11 +138,11 @@ def rotation_matrix(x, y, z):
 
     return R
 
-def camera_matrix(R,T, focal_len=29, pixel_size=0.00122):
+def camera_matrix(R,T, center_x, center_y, focal_len=29, pixel_size=0.00122):
     fx = focal_len/pixel_size
     fy = focal_len/pixel_size
-    intrinsic_matrix = np.array([[fx,0,0],
-                            [0,fy,0],
+    intrinsic_matrix = np.array([[fx,0,center_x],
+                            [0,fy,center_y],
                             [0,0,1]])
     extrinsic_matrix = np.append(R,T,axis=1)
     camera_matrix = np.matmul(intrinsic_matrix, extrinsic_matrix)
