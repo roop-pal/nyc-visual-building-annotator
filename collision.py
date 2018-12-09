@@ -25,7 +25,7 @@ def within_model_bounds(position):
 #      		: alpha in the y-z plane
 #      : Dictionary of buildings with x,y,z ranges as attributes
 # Output: The building you are looking at or False (if it doesn't collide with a building)
-def collision_check(position, euler, dictionary,step=5):
+def collision_check(position, euler, dictionary,step=1):
 	time = 0
 	s_x, s_y, s_z = position
 	theta, alpha = -euler[0] + np.pi/2, -euler[1] - np.pi/2

@@ -13,8 +13,8 @@ def parse(GML_file):
 			buildings[bldg_id]["X"] = [float("inf"),-float("inf")]
 			buildings[bldg_id]["Y"] = [float("inf"),-float("inf")]
 			buildings[bldg_id]["Z"] = [float("inf"),-float("inf")]
-			buildings[current]['polygons'] = []
 			current = bldg_id
+			buildings[current]['polygons'] = []
 		if "/bldg:Building" in line:
 			current = None
 		if "<gml:posList>" in line and "</gml:posList>" in line:

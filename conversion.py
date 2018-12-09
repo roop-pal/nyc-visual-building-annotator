@@ -1,5 +1,6 @@
-import numpy as np 
-from gml_parser import *
+import numpy as np
+import gml_parser
+import math
 
 # Input: Latitude and Longitude coordinates (In Degrees, Minutes, Seconds)
 #        lattitude: String, Longitude: String
@@ -23,14 +24,14 @@ def compute_homography(src, dst):
     #     dst: destination points, shape (n, 2)
     # Output:
     #     H: homography from source points to destination points, shape (3, 3)
-    
+
     A = np.zeros([2*src.shape[0], 9])
     for i in range(src.shape[0]):
         A[2*i, :] = np.array([src[i,0],src[i,1],1,0,0,0,
                               -dst[i,0]*src[i,0],-dst[i,0]*src[i,1],-dst[i,0]])
         A[2*i+1, :] = np.array([0,0,0,src[i,0],src[i,1],1,
                                 -dst[i,1]*src[i,0],-dst[i,1]*src[i,1],-dst[i,1]])
-    
+
     w, v = np.linalg.eig(np.dot(A.T, A))
     index = np.argmin(w)
     H = v[:, index].reshape([3,3])
@@ -54,7 +55,7 @@ def apply_homography(src, H):
     return final
 
 # Makes homography to map from coordinate system to Latitude/Longitude
-# Just for the 12th GML File 
+# Just for the 12th GML File
 def train_homography(dictionary):
 	# Manually measured latitude and longitude for 5 buildings
 	new_lat_long = np.array([[40.712994,-74.013227], [40.748629,-73.985807],[40.751655,-73.975488],[40.702138,-74.012065],[40.769110,-73.981620]])
@@ -72,7 +73,7 @@ def train_homography(dictionary):
 
 	# Compute Homography
 	H = compute_homography(np.matrix(src_data),new_lat_long)
-	return H 
+	return H
 
 # Input: Lat/Long string or float
 # Output: np.matrix of position in the coordinate system
@@ -82,10 +83,10 @@ def GPS_to_coordinate(Lat, Long, inv_H):
     elif type(Lat) is float and type(Long) is float:
         new_degrees = [Lat, Long]
     else:
-        raise TypeError 
+        raise TypeError
 
     dest = apply_homography(np.matrix(new_degrees),inv_H)
-    
+
     return dest.tolist()[0]
 
 def translation_vector(lat,long,pressure,inv_H):
@@ -95,13 +96,13 @@ def translation_vector(lat,long,pressure,inv_H):
     return T
 
 # Input: x,y position in the model coordinate system
-# Output: Lat/Long in degrees format 
+# Output: Lat/Long in degrees format
 def coordinate_to_GPS(x, y):
-    dictionary = parse('DA12_3D_Buildings_Merged.gml')
+    dictionary = gml_parser.parse('DA12_3D_Buildings_Merged.gml')
     H = train_homography(dictionary)
 
     dest = apply_homography(np.matrix([x,y]),H)
-    
+
     return dest.tolist()[0]
 
 
@@ -147,9 +148,40 @@ def camera_matrix(R,T, focal_len=29, pixel_size=0.00122):
     camera_matrix = np.matmul(intrinsic_matrix, extrinsic_matrix)
     return camera_matrix
 
+
+# Checks if a matrix is a valid rotation matrix.
+def isRotationMatrix(R):
+    Rt = np.transpose(R)
+    shouldBeIdentity = np.dot(Rt, R)
+    I = np.identity(3, dtype=R.dtype)
+    n = np.linalg.norm(I - shouldBeIdentity)
+    return n < 1e-5
+
+
+# Calculates rotation matrix to euler angles
+# The result is the same as MATLAB except the order
+# of the euler angles ( x and z are swapped ).
+def rotationMatrixToEulerAngles(R):
+    assert (isRotationMatrix(R))
+
+    sy = math.sqrt(R[0, 0] * R[0, 0] + R[1, 0] * R[1, 0])
+
+    singular = sy < 1e-6
+
+    if not singular:
+        x = math.atan2(R[2, 1], R[2, 2])
+        y = math.atan2(-R[2, 0], sy)
+        z = math.atan2(R[1, 0], R[0, 0])
+    else:
+        x = math.atan2(-R[1, 2], R[1, 1])
+        y = math.atan2(-R[2, 0], sy)
+        z = 0
+
+    return np.array([y, x, z])
+
 if __name__ == '__main__':
     # For testing purposes
-    dictionary = parse('DA12_3D_Buildings_Merged.gml') 
+    dictionary = gml_parser.parse('DA12_3D_Buildings_Merged.gml')
     test = dictionary['Bldg_12210022273']
     H = train_homography(dictionary)
     H_inv = np.linalg.inv(H)
@@ -167,13 +199,3 @@ if __name__ == '__main__':
     # print(GPS_to_coordinate(40.713009, -74.013678))
     # s=translation_vector(40.713009, -74.013678,0,np.linalg.inv(H))
     # print(s)
-
-    [[-9.87285e+05]
-     [-2.09991e+05]
-     [-6.14687e+02]]
-
-
-    R = rotation_matrix(x, y, z) # DOUBLE CHECK CUZ PROBABLY WRONG
-    # T = translation_vector(lat,long,pressure,H_inv)
-    T = np.array([[9.87285e+05],[2.09991e+05],[6.14687e+02]])
-    C = camera_matrix(R, T) # if time DOUBLE CHECK
