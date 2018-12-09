@@ -108,14 +108,14 @@ def coordinate_to_GPS(x, y):
 
 # TODO: Implement using hardcoded sea level pressure
 def barometer_to_z(pressure):
-    pass
+    return 0
 
 
 def rotation_matrix(x, y, z):
     # x,y,z = 0 when phone is flat on table with top facing east
     # normalize from -1 to 1 to 0 to 2pi
 
-    theta = y, x, z
+    theta = x, y, z
 
     theta = [axis % 2 * np.pi for axis in theta]
 
