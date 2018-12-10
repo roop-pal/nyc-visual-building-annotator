@@ -46,7 +46,7 @@ def apply_homography(src, H):
     #     H: homography from source points to destination points, shape (3, 3)
     # Output:
     #     dst: destination points, shape (n, 2)
-    final = np.zeros_like(src)
+    final = np.zeros_like(src, dtype=float)
     for i in range(len(src)):
         transform = np.append(src[i],[[1]],1)
         result = np.dot(H,transform.T)
