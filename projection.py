@@ -6,21 +6,23 @@ from conversion import *
 
 #################
 # Assumes translation vector comes in with x and y as positive numbers (maybe z too, not sure if that matters)
-# To update just change lines 27-29
+# To update just change lines 29-31
 #################
-def project(H, building_polys, bldg_id, x, y, z, lat, long, alt=77.6, focal_length=29, pixel_size=0.00122, view_x=3024, view_y=4032):
+
+
+def project(R, T, building_polys, focal_length=29, pixel_size=0.00122, view_x=3024, view_y=4032):
+    #Input: R - rotation matrix
+    #       T - translation vector
+    #       building_polys - list of lists of polygons
+
     center_x, center_y = view_x // 2, view_y // 2
-
-    R = rotation_matrix(x, y, z)
-
-    T = translation_vector(lat, long, alt, H)
     x_offset, y_offset, z_offset = T[0], T[1], T[2]
     T = np.array([[0], [0], [0]])
 
     C = camera_matrix(R, T, center_x, center_y, focal_length, pixel_size)
 
     twoD_pts = []
-    for polygon in building_polys[bldg_id]:
+    for polygon in building_polys:
         poly_pts = np.zeros((len(polygon), 2))
         for idx, pt in enumerate(polygon):
             pt = np.array(pt)
