@@ -1,3 +1,6 @@
 **.png
 **/.idea/**
 **.DS_Store
+**/.ipynb_checkpoints/**
+**.gml
+**/__pycache__/**

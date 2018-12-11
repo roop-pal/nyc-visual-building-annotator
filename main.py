@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # </project>'''
 
 
-    putMeshLab(cv2.imread('1.png'),'''<!DOCTYPE ViewState>
+    putMeshLab(cv2.imread('11.png'),'''<!DOCTYPE ViewState>
     <project>
      <VCGCamera ViewportPx="907 622" CameraType="0" RotationMatrix="0.306982 0.950231 0.0531318 0 0.0740677 -0.0795119 0.994078 0 0.948829 -0.301229 -0.0947902 0 0 0 0 1 " TranslationVector="-990496 -219173 -67.16 1" FocalMm="19.8855" LensDistortion="0 0" CenterPx="453 311" PixelSizeMm="0.0369161 0.0369161"/>
      <ViewSettings TrackScale="0.00265847" FarPlane="111.982" NearPlane="0.909327"/>
