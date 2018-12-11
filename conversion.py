@@ -108,7 +108,7 @@ def coordinate_to_GPS(x, y):
 
 # TODO: Implement using hardcoded sea level pressure
 def barometer_to_z(pressure):
-    return 0
+    return -pressure
 
 
 def rotation_matrix(x, y, z):
@@ -138,7 +138,7 @@ def rotation_matrix(x, y, z):
 
     return R
 
-def camera_matrix(R,T, center_x, center_y, focal_len=29, pixel_size=0.00122):
+def camera_matrix(R,T, focal_len, pixel_size, center_x, center_y):
     fx = focal_len/pixel_size
     fy = focal_len/pixel_size
     intrinsic_matrix = np.array([[fx,0,center_x],
