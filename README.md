@@ -5,7 +5,7 @@ Many if not most of us have looked at the awe-inspiring New York City skyline an
 
 ### Results
 
-![alt text](https://github.com/roop-pal/nyc-visual-building-annotator/results.png)
+![alt text](https://raw.githubusercontent.com/roop-pal/nyc-visual-building-annotator/master/results.png)
 
 
 ### Final Report
