@@ -1,6 +1,6 @@
 # nyc-visual-building-annotator
 
-Many if not most of us have looked at the awe-inspiring New York City skyline and been curious about each building and its history. We believe that people are unable to fully appreciate the skyline without knowing this information. We sought to change this. Our program attempts to identify buildings within images of the New York City skyline taking in only smartphone data and a 3D model. By converting the phone data into the model space, we were able to create a projection of what the building are suppose to look like at a given location. Using alignment techniques, we were then able to outline the building and provide relevant information. We believe we have set the framework for an innovative application.
+Many if not most of us have looked at the awe-inspiring New York City skyline and been curious about each building and its history. We believe that people are unable to fully appreciate the skyline without knowing this information. We sought to change this. Our program attempts to identify buildings within images of the New York City skyline taking in only smartphone data and a 3D model. By converting the phone data into the model space, we were able to create a projection of what the buildings are supposed to look like at a given location. Using alignment techniques, we were then able to outline the building and provide relevant information. We believe we have set the framework for an innovative application.
 
 
 ### Results
